@@ -1,19 +1,20 @@
 const stopMark = {};
-let count = 0;
 let score = 0; // 计分
 class Teris {
   constructor(shape) {
     this.position = JSON.parse(JSON.stringify(shape));
-    for (let index = 0; index < this.position.length; index += 2) {
-      this.position[index] += 9;
+    for (let index = 0; index < this.position.x.length; index++) {
+      this.position.x[index] += 4;
     }
     this.shape = JSON.parse(JSON.stringify(shape));
     this.element = [];
   }
   create() { // 创建方块
     if (this.check()) {
-      if (downSpeed >= 250) {
+      if (downSpeed >= 350) {
         downSpeed = downSpeed - 5;
+      } else if (downSpeed >= 250) {
+        downSpeed = downSpeed - 3;
       } else if (downSpeed >= 100) {
         downSpeed = downSpeed - 2;
       } else if (downSpeed >= 50) {
@@ -21,10 +22,10 @@ class Teris {
       } else if (downSpeed >= 10) {
         downSpeed = downSpeed - 0.5;
       }
-      for (let index = 0; index < this.position.length; index += 2) {
+      for (let index = 0; index < this.position.x.length; index++) {
         const rectDom = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rectDom.setAttribute('width', 10);
-        rectDom.setAttribute('height', 10);
+        rectDom.setAttribute('width', 20);
+        rectDom.setAttribute('height', 20);
         rectDom.classList.add('active');
         this.element.push(rectDom);
         this.draw();
@@ -36,61 +37,61 @@ class Teris {
   }
   draw() {  // 移动方块位置
     for (const [index, rect] of this.element.entries()) {
-      rect.setAttribute('transform', `translate(${this.position[2 * index] * 10}, ${this.position[2 * index + 1] * 10})`);
+      rect.setAttribute('transform', `translate(${this.position.x[index] * 20}, ${this.position.y[index] * 20})`);
     }
   }
   check() {  // 检测是否超出高度及是否下方已有固定方块
-    for (let index = 0; index < this.position.length; index += 2) {
-      if (this.position[index + 1] + 1 >= 40) {
+    for (let index = 0; index < this.position.y.length; index++) {
+      if (this.position.y[index] + 1 >= 20) {
         return false;
-      } else if (stopMark[(this.position[index]) + '_' + (this.position[index + 1] + 1)]) {
+      } else if (stopMark[(this.position.x[index]) + '_' + (this.position.y[index] + 1)]) {
         return false;
       }
     }
     return true;
   }
   checkleft() { // 检测是否超出左侧位置及左侧是否有固定方块
-    for (let index = 0; index < this.position.length; index += 2) {
-      if (stopMark[(this.position[index] - 1) + '_' + (this.position[index + 1])]) {
+    for (let index = 0; index < this.position.x.length; index++) {
+      if (stopMark[(this.position.x[index] - 1) + '_' + (this.position.y[index])]) {
         return false;
-      } else if (this.position[index] - 1 < 0) {
+      } else if (this.position.x[index] - 1 < 0) {
         return false;
       }
     }
     return true;
   }
   checkright() { // 检测右侧
-    for (let index = 0; index < this.position.length; index += 2) {
-      if (stopMark[(this.position[index] + 1) + '_' + (this.position[index + 1])]) {
+    for (let index = 0; index < this.position.x.length; index++) {
+      if (stopMark[(this.position.x[index] + 1) + '_' + (this.position.y[index])]) {
         return false;
-      } else if (this.position[index] + 1 >= 20) {
+      } else if (this.position.x[index] + 1 >= 10) {
         return false;
       }
     }
     return true;
   }
   checkRotate(difference) { // 检测旋转过程中是否超出左侧或右侧或者左侧或右侧已有固定方块
-    for (let index = 0; index < this.position.length; index += 2) {
-      if (this.position[index + 1] + 1 >= 40) {
+    for (let index = 0; index < this.position.x.length; index++) {
+      if (this.position.y[index] + 1 >= 20) {
         return false;
-      } else if (stopMark[(this.shape[index + 1] + difference[index]) + '_' + (2 - this.shape[index] + difference[index + 1])]) {
+      } else if (stopMark[(this.shape.y[index] + difference.x[index]) + '_' + (2 - this.shape.x[index] + difference.y[index])]) {
         return false;
-      } else if (this.shape[index + 1] + difference[index] >= 20 || this.shape[index + 1] + difference[index] + 1 - 1 < 0) {
+      } else if (this.shape.y[index] + difference.x[index] >= 10 || this.shape.y[index] + difference.x[index] < 0) {
         return false;
       }
     }
     return true;
   }
   movedown() {
-    for (let index = 0; index < this.position.length; index += 2) {
-      this.position[index + 1]++;
+    for (let index = 0; index < this.position.y.length; index++) {
+      this.position.y[index]++;
     }
     this.draw();
   }
   moveleft() {
     if (this.checkleft()) {
-      for (let index = 0; index < this.position.length; index += 2) {
-        this.position[index]--;
+      for (let index = 0; index < this.position.x.length; index++) {
+        this.position.x[index]--;
       }
       this.draw();
     }
@@ -98,35 +99,44 @@ class Teris {
   }
   moveright() {
     if (this.checkright()) {
-      for (let index = 0; index < this.position.length; index += 2) {
-        this.position[index]++;
+      for (let index = 0; index < this.position.x.length; index++) {
+        this.position.x[index]++;
       }
       this.draw();
     }
   }
   rotate() {
-    const difference = [];
-    for (const [index, value] of this.position.entries()) {
-      difference.push(value - this.shape[index]);
+    const difference = {x: [], y: []};
+    for (const [index, value] of this.position.x.entries()) {
+      difference.x.push(value - this.shape.x[index]);
     }
+    for (const [index, value] of this.position.y.entries()) {
+      difference.y.push(value - this.shape.y[index]);
+    }
+
     if (this.checkRotate(difference)) {
-      this.position = [this.shape[1] + difference[0], 2 - this.shape[0] + difference[1], this.shape[3] + difference[2], 2 - this.shape[2] + difference[3], this.shape[5] + difference[4], 2 - this.shape[4] +difference[5], this.shape[7] + difference[6], 2 - this.shape[6] + difference[7]];
-      this.shape = [this.shape[1], 2 - this.shape[0], this.shape[3], 2 - this.shape[2], this.shape[5], 2 - this.shape[4], this.shape[7], 2 - this.shape[6]];
+      for (let index = 0; index < this.position.x.length; index++) {
+        this.position.x[index] = this.shape.y[index] + difference.x[index];
+        this.position.y[index] = 2 - this.shape.x[index] + difference.y[index];
+      }
+
+      this.shape = {x: [this.shape.y[0], this.shape.y[1], this.shape.y[2], this.shape.y[3]],
+                    y: [2 - this.shape.x[0], 2 - this.shape.x[1], 2 - this.shape.x[2], 2 - this.shape.x[3]]};
       this.draw();
     }
   }
   fix() {
-    for (let index = 0; index < this.position.length; index += 2) {
-      stopMark[this.position[index] + '_' + this.position[index + 1]] = 1;
+    for (let index = 0; index < this.position.y.length; index++) {
+      stopMark[this.position.x[index] + '_' + this.position.y[index]] = 1;
     }
     for (const [index, value] of Array.from(document.querySelectorAll('.active').entries())) {
       value.classList.remove('active');
       value.classList.add('fix');
-      value.setAttribute('fix-field', `${this.position[index * 2]}_${this.position[index * 2 + 1]}`); // 标记每个固定方块的位置。
+      value.setAttribute('fix-field', `${this.position.x[index]}_${this.position.y[index]}`); // 标记每个固定方块的位置。
     }
   }
   checkRemove() { // 检测是否有可以消除的行
-    const row = 20, col = 40;
+    const row = 10, col = 20;
     for (let y = 0; y < col; y++) {
       let count = 0;
       for (let x = 0; x < row; x++) {
@@ -143,12 +153,12 @@ class Teris {
     score++;
     [...document.querySelector('.score').children].map(x => x.innerHTML = score);
     const fixRects = document.querySelectorAll('.fix');
-    for (let index = 0; index < 20; index++) {
+    for (let index = 0; index < 10; index++) {
       document.querySelector(`.fix[fix-field="${index}_${line}"]`).remove();
       delete stopMark[index + '_' + line];
     }
     for (let i = line; i > 0; i--) {
-      for (let j = 0; j < 20; j++) {
+      for (let j = 0; j < 10; j++) {
         if (stopMark[j + "_" + (i - 1)]) {
           delete stopMark[j + '_' + (i - 1)]
           stopMark[j + "_" + i] = 1;
@@ -158,20 +168,21 @@ class Teris {
     for (const rect of Array.from(fixRects)) {
       let [, x, y] = /(.*)\_(.*)/.exec(rect.getAttribute('fix-field')).map(x => +x);
       if (y < line) {
-        document.querySelector(`.fix[fix-field="${x}_${y}"]`).setAttribute('transform', `translate(${x * 10}, ${(y + 1) * 10})`);
+        document.querySelector(`.fix[fix-field="${x}_${y}"]`).setAttribute('transform', `translate(${x * 20}, ${(y + 1) * 20})`);
         document.querySelector(`.fix[fix-field="${x}_${y}"]`).setAttribute('fix-field', `${x}_${y + 1}`);
       }
     }
   }
 }
-const shapes = [[2, 0, 2, 1, 2, 2, 1, 2],
-                [0, 1, 1, 0, 1, 1, 2, 1],
-                [1, 0, 2, 0, 1, 1, 2, 1],
-                [0, 0, 1, 0, 1, 1, 2, 1],
-                [1, 0, 1, 1, 1, 2, 1, 3],
-                [1, 0, 2, 0, 0, 1, 1, 1],
-                [1, 0, 1, 1, 1, 2, 2, 2]];
-let nextShape = shapes[Math.trunc(Math.random() * 10 % 7)];
+const shapes = [{x: [2, 2, 2, 1], y: [0, 1, 2, 2]},
+                {x: [0, 1, 1, 2], y: [1, 0, 1, 1]},
+                {x: [1, 2, 1, 2], y: [0, 0, 1, 1]},
+                {x: [0, 1, 1, 2], y: [0, 0, 1, 1]},
+                {x: [1, 1, 1, 1], y: [0, 1, 2, 3]},
+                {x: [1, 2, 0, 1], y: [0, 0, 1, 1]},
+                {x: [1, 1, 1, 2], y: [0, 1, 2, 2]}];
+let random = Math.trunc(Math.random() * 7);
+let nextShape = shapes[Math.trunc(Math.random() * 7)];
 let shape = new Teris(nextShape);
 let interval;
 let spaceCount = 0;
@@ -196,7 +207,7 @@ function repeatmove() {
     clearInterval(interval);
     shape.create();
     interval = setInterval(() => {repeatmove()}, downSpeed);
-    nextShape = shapes[Math.trunc(Math.random() * 10 % 7)];
+    nextShape = shapes[Math.trunc(Math.random() * 7)];
     drawnext(nextShape);
   }
 }
@@ -235,7 +246,7 @@ function keyDown(e) {
         clearInterval(interval);
         shape.create();
         interval = setInterval(() => {repeatmove()}, downSpeed);
-        nextShape = shapes[Math.trunc(Math.random() * 10 % 7)];
+        nextShape = shapes[Math.trunc(Math.random() * 7)];
         drawnext(nextShape);
       }
       break;
@@ -245,7 +256,9 @@ function keyDown(e) {
       }
       if (pause) {
         clearInterval(interval);
+        [...document.querySelector('.title').children].map(x => x.innerHTML = 'PAUSE');
       } else {
+        [...document.querySelector('.title').children].map(x => x.innerHTML = 'SCORE');
         clearInterval(interval);
         interval = setInterval(() => {repeatmove()}, downSpeed);
       }
@@ -255,12 +268,14 @@ function keyDown(e) {
   }
 }
 function drawnext(nextShape) {
-  for (let index = 0; index < nextShape.length; index += 2) {
+  for (let index = 0; index < nextShape.x.length; index++) {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('width', 10);
     rect.setAttribute('height', 10);
-    rect.classList.add('next');
-    rect.setAttribute('transform', `translate(${nextShape[index] * 10}, ${nextShape[index + 1] * 10})`);
+    rect.setAttribute('x', 100);
+    rect.setAttribute('y', 120)
+    rect.classList.add('next-shape');
+    rect.setAttribute('transform', `translate(${nextShape.x[index] * 10}, ${nextShape.y[index] * 10})`);
     document.querySelector('.next').appendChild(rect);
   }
 }

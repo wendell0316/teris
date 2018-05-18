@@ -1,0 +1,28 @@
+{
+  "name": "teris",
+  "version": "1.0.0",
+  "description": "原生js和svg写的俄罗斯方块",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "puppeteer": "^1.4.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.1.1"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wendell0316/teris.git"
+  },
+  "author": "wendell",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wendell0316/teris/issues"
+  },
+  "homepage": "https://github.com/wendell0316/teris#readme"
+}
