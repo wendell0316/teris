@@ -45,4 +45,28 @@ describe('单元测试', () => {
     })
   })
 
+  describe('方块垂直下落测试', async () => {
+    beforeEach(async () => {
+      await page.keyboard.down('Space');
+    })
+
+    it('碰到底部停止应该正确', async () => {
+      await timeout(10000);
+      const position = await page.evaluate(x => {
+        const fixRects = Array.from(document.querySelectorAll('.fix'));
+        for (const rect of fixRects) {
+          let [, x, y] = /(.*)\_(.*)/.exec(rect.getAttribute('fix-field')).map(x => +x);
+          if (y >= 20) {
+            return 'false';
+          }
+        }
+        return 'true';
+      });
+      assert.equal(position, 'true');
+    })
+
+    it('碰到其他元素停止应该正确', async () => {
+
+    })
+  })
 })

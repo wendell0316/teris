@@ -1,6 +1,6 @@
 <?xml-stylesheet type="text/css" href="./style.css"?>
 <svg class="teris" width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <svg x="650">
+  <svg x="600">
     <g class="title">
         <text text-anchor="middle" x="120" y="50" class="text text-1">
             SCORE
@@ -29,7 +29,7 @@
             0
         </text>
     </g>
-    <g class="next" x="100" y="120">
+    <g class="next" >
 
     </g>
   </svg>
