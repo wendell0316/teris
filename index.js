@@ -80,6 +80,11 @@ class Teris {
       const restartText = document.querySelector('.start');
       restartText.innerHTML = '按Enter键重新开始';
       document.getElementById('svg').appendChild(restartText);
+      document.onkeydown = function restartGame(e) {
+        if (e.code === 'Enter') {
+          location.reload();
+        }
+      };
     }
   }
 
@@ -151,23 +156,7 @@ class Teris {
 
   remove(line) { // 消除行
     score++;
-    if (score === 10) {
-      downSpeed -= 50;
-    } else if (score === 20) {
-      downSpeed -= 50;
-    } else if (score === 30) {
-      downSpeed -= 50;
-    } else if (score === 40) {
-      downSpeed -= 50;
-    } else if (score === 50) {
-      downSpeed -= 50;
-    } else if (score === 70) {
-      downSpeed -= 50;
-    } else if (score === 100) {
-      downSpeed -= 50;
-    } else if (score === 150) {
-      downSpeed -= 50;
-    } else if (score === 200) {
+    if ([10, 20, 30, 40, 50, 70, 100, 150, 200].includes(score)) {
       downSpeed -= 50;
     }
     [...document.querySelector('.score').children].map(x => x.innerHTML = score);
@@ -200,30 +189,59 @@ const shapes = [[{x: 2, y:0}, {x: 2, y: 1}, {x: 2, y: 2}, {x: 1, y: 2}],
                 [{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 1, y: 3}],
                 [{x: 1, y:1}, {x: 2, y: 1}, {x: 0, y: 2}, {x: 1, y: 2}],
                 [{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}]];
-let nextShape = shapes[Math.trunc(Math.random() * 7)];
+let nextShape;
 let shape;
 let interval;
-let spaceCount = 0;
 let downSpeed = 500;
-let pause = false;
-document.onkeydown = keyDown;
+document.onkeydown = function startGame() {
+  document.querySelector('.start').innerHTML = '';
+  nextShape = shapes[Math.trunc(Math.random() * 7)];
+  clearInterval(interval);
+  createNextShape();
+  document.onkeydown = keyDown;
+};
+
+function keyDown(e) {
+  switch (e.code) {
+    case 'ArrowUp':
+      shape.rotate();
+      break;
+    case 'ArrowRight':
+      shape.move(1, 0);
+      break;
+    case 'ArrowLeft':
+      shape.move(-1, 0);
+      break;
+    case 'ArrowDown':
+      moveDown();
+      break;
+    case 'Space':
+      clearInterval(interval);
+      [...document.querySelector('.title').children].map(x => x.innerHTML = 'PAUSE');
+      document.onkeydown = function resume(e) {
+        if (e.code !== 'Space') return;
+        [...document.querySelector('.title').children].map(x => x.innerHTML = 'SCORE');
+        interval = setInterval(() => moveDown(), downSpeed);
+        document.onkeydown = keyDown;
+      };
+      break;
+  }
+}
 
 function createNextShape() {
   shape = new Teris(nextShape);
   drawnext(nextShape = shapes[Math.trunc(Math.random() * 7)]);
-  interval = setInterval(() => repeatmove(), downSpeed);
+  interval = setInterval(() => moveDown(), downSpeed);
 }
 
-function repeatmove() {
+function moveDown() {
   const newPos = deepClone(shape.position);
   newPos.forEach(pos => {
     pos.y += 1;
   });
   if (shape.isValidPos(newPos)) {
     shape.move(0, 1);
-  } else if (document.querySelector('.title text').innerHTML === 'GAME OVER') {
-    clearInterval(interval);
-  } else {
+  } else if (document.querySelector('.title text').innerHTML !== 'GAME OVER') {
     shape.fix();
     shape.checkRemove();
     [...document.querySelector('.next').children].map(x => x.remove());
@@ -231,76 +249,7 @@ function repeatmove() {
     createNextShape();
   }
 }
-function keyDown(e) {
-  if (spaceCount === 0) { // 按任意键启动
-    document.querySelector('.start').innerHTML = '';
-    createNextShape();
-  }
-  let gameStatus = document.querySelector('.title text').innerHTML;
-  spaceCount++;
-  switch (e.code) {
-    case 'ArrowUp':
-      if (!pause) {
-        shape.rotate();
-      }
-      break;
-    case 'ArrowRight':
-      if (!pause) {
-        shape.move(1, 0);
-      }
-      break;
-    case 'ArrowLeft':
-      if (!pause) {
-        shape.move(-1, 0);
-      }
-      break;
-    case 'ArrowDown':
-      const newPos = deepClone(shape.position);
-      newPos.forEach(pos => {
-        pos.y += 1;
-      });
-      if (shape.isValidPos(newPos)) {
-        shape.move(0, 1);
-      } else if(gameStatus === 'GAME OVER') {
-        clearInterval(interval);
-      } else {
-        shape.fix();
-        shape.checkRemove();
-        [...document.querySelector('.next').children].map(x => x.remove());
-        clearInterval(interval);
-        createNextShape();
-      }
-      break;
-    case 'Space':
-      if (spaceCount !== 1) {
-        pause = !pause;
-      }
-      if(gameStatus === 'GAME OVER') {
-        clearInterval(interval);
-      } else if (pause) {
-        clearInterval(interval);
-        [...document.querySelector('.title').children].map(x => x.innerHTML = 'PAUSE');
-      } else {
-        [...document.querySelector('.title').children].map(x => x.innerHTML = 'SCORE');
-        clearInterval(interval);
-        interval = setInterval(() => {repeatmove()}, downSpeed);
-      }
-      break;
-    case 'Enter':
-      if (gameStatus === 'GAME OVER') {
-        clearInterval(interval);
-        document.querySelector('.start').innerHTML = '';
-        [...document.querySelector('.next').children].map(x => x.remove());
-        [...document.querySelectorAll('.fix')].map(x => x.remove());
-        [...document.querySelector('.title').children].map(x => x.innerHTML = 'SCORE');
-        stopMark.clear();
-        downSpeed = 500;
-        createNextShape();
-      }
-    default:
-      break;
-  }
-}
+
 function drawnext(nextShape) {
   for (const pos of nextShape) {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');

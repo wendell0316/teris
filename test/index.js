@@ -4,6 +4,13 @@ const assert = require('assert');
 const { promisify } = require('util');
 const path = require('path');
 const timeout = promisify(setTimeout);
+
+async function move(arrow, count) {
+  for (let index = 0; index < count; index++) {
+    await this.down(arrow);
+  }
+}
+
 describe('单元测试', () => {
   /** @type {puppeteer.Browser} */
   let browser;
@@ -16,17 +23,20 @@ describe('单元测试', () => {
   });
 
   beforeEach(async function() {
-    this.timeout(60000);
     page = await browser.newPage();
     await page.setViewport({
       width: 1200,
       height: 1000,
     });
     await page.goto(fileUrl);
+    await page.evaluate(x => {
+      downSpeed = 100000;
+    })
   });
 
   describe('游戏开始测试', async () => {
     beforeEach(async () => {
+
       await page.keyboard.down('Space');
     })
 
@@ -45,13 +55,13 @@ describe('单元测试', () => {
     })
   })
 
-  describe('方块垂直下落测试', async () => {
+  describe('方块下落测试', async () => {
     beforeEach(async () => {
       await page.keyboard.down('Space');
     })
 
-    it('碰到底部停止应该正确', async () => {
-      await timeout(10000);
+    it('碰到底部停止应该正确', async function() {
+      await move.call(page.keyboard, 'ArrowDown', 18);
       const position = await page.evaluate(x => {
         const fixRects = Array.from(document.querySelectorAll('.fix'));
         for (const rect of fixRects) {
@@ -63,10 +73,114 @@ describe('单元测试', () => {
         return 'true';
       });
       assert.equal(position, 'true');
-    })
+    });
 
-    it('碰到其他元素停止应该正确', async () => {
+    it('碰到其他元素停止应该正确', async function() {
+      const direction = ['ArrowUp', 'ArrowLeft', 'ArrowRight'];
+      for (let index = 0; index < 5; index++) {
+        await move.call(page.keyboard, direction[Math.trunc(Math.random()*3)], Math.trunc(Math.random()*5));
+        await move.call(page.keyboard, 'ArrowDown', 18);
+      }
 
+      const previous = await page.evaluate(x => {
+        const poss = [...document.querySelectorAll('.fix')].map(rect => rect.getAttribute('fix-field'));
+        for (const [index, pos] of poss.sort().entries()) {
+          if (pos === poss[index + 1]) {
+            return 'false';
+          }
+        }
+        return 'true';
+      })
+      assert.equal(previous, 'true');
+    });
+
+    it('左移或右移应该正确', async function() {
+      const oldPos = await page.evaluate(x => {
+      return [...document.querySelectorAll('.active')].map(x => /translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+      });
+      await page.keyboard.down('ArrowLeft');
+      const newLeftPos = await page.evaluate(x => {
+        return [...document.querySelectorAll('.active')].map(x => /translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+      })
+      await page.keyboard.down('ArrowRight');
+      const newRightPos = await page.evaluate(x => {
+        return [...document.querySelectorAll('.active')].map(x => /translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+      })
+      assert.deepEqual(oldPos, newLeftPos.map(x => +x + 20));
+      assert.deepEqual(oldPos, newRightPos);
     })
-  })
+  });
+
+  describe('消除测试', async () => {
+    beforeEach(async () => {
+      await page.evaluate(x => {
+        Math.random=function(){return 0.1};
+      });
+      await page.keyboard.down('Space');
+    });
+
+    it('底行消除分数增加及消除元素成功', async function() {
+      await move.call(page.keyboard, 'ArrowRight', 3);
+      await move.call(page.keyboard, 'ArrowDown', 18);
+
+      await move.call(page.keyboard, 'ArrowRight', 1);
+      await move.call(page.keyboard, 'ArrowDown', 18);
+
+      await move.call(page.keyboard, 'ArrowLeft', 1);
+      await move.call(page.keyboard, 'ArrowDown', 18);
+
+      await move.call(page.keyboard, 'ArrowLeft', 3);
+      await move.call(page.keyboard, 'ArrowDown', 18);
+
+      await move.call(page.keyboard, 'ArrowLeft', 5);
+      await move.call(page.keyboard, 'ArrowDown', 18);
+
+      const remove = await page.evaluate(x => {
+        const score = +document.querySelector('.score text').textContent;
+        const posY = [...document.querySelectorAll('.fix')].map(x => /(.*)\_(.*)/.exec(x.getAttribute('fix-field'))[2]);
+        if (score === 1 && !posY.includes('17')) {
+          return 'true';
+        } else {
+          return 'false';
+        }
+      });
+      assert.equal(remove, 'true');
+    });
+
+    it('顶部方块消除应该正确', async () => {
+       await move.call(page.keyboard, 'ArrowUp', 2);
+       await move.call(page.keyboard, 'ArrowRight', 3);
+       await move.call(page.keyboard, 'ArrowDown', 18);
+
+       await move.call(page.keyboard, 'ArrowUp', 2);
+       await move.call(page.keyboard, 'ArrowRight', 1);
+       await move.call(page.keyboard, 'ArrowDown', 18);
+
+       await move.call(page.keyboard, 'ArrowUp', 2);
+       await move.call(page.keyboard, 'ArrowLeft', 1);
+       await move.call(page.keyboard, 'ArrowDown', 18);
+
+       await move.call(page.keyboard, 'ArrowUp', 2);
+       await move.call(page.keyboard, 'ArrowLeft', 3);
+       await move.call(page.keyboard, 'ArrowDown', 18);
+
+       await move.call(page.keyboard, 'ArrowUp', 2);
+       await move.call(page.keyboard, 'ArrowLeft', 5);
+       await move.call(page.keyboard, 'ArrowDown', 18);
+
+       const newPosY = await page.evaluate(x => {
+         const posY = [...document.querySelectorAll('.fix')].map(x => /(.*)\_(.*)/.exec(x.getAttribute('fix-field'))[2]);
+         return JSON.stringify(!posY.includes('17'));
+       });
+       assert.equal(newPosY, 'true');
+    });
+  });
+
+  afterEach(async () => {
+    await page.close();
+  });
+
+  after(async () => {
+    await browser.close();
+  });
 })
