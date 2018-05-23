@@ -235,6 +235,14 @@ describe('单元测试', () => {
       assert.equal(reStartState, '按Enter键重新开始');
     });
 
+    it('游戏结束时计时器和下一个shape应该结束', async () => {
+      await move.call(page.keyboard, 'ArrowDown', 50);
+      const nextChildrenLength = await page.evaluate(x => {
+        return document.querySelector('.next').children.length;
+      });
+      assert.equal(nextChildrenLength, 0);
+    })
+
     it('游戏结束时按Enter应该重新开始', async () => {
       await move.call(page.keyboard, 'ArrowDown', 50);
       await page.keyboard.down('Enter');
