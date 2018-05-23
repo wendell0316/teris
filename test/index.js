@@ -38,27 +38,27 @@ describe('单元测试', () => {
     beforeEach(async () => {
 
       await page.keyboard.down('Space');
-    })
+    });
 
     it('按任意键开始游戏方块下落应该成功', async () => {
       const actives = await page.evaluate(x => {
         return document.querySelectorAll('.active').length;
-      })
+      });
       assert.equal(actives, 4);
-    })
+    });
 
     it('按任意键开始游戏下一方块出现应该成功', async () => {
       const nexts = await page.evaluate(x => {
         return document.querySelectorAll('.next-shape').length;
-      })
+      });
       assert.equal(nexts, 4);
-    })
+    });
   })
 
   describe('方块下落测试', async () => {
     beforeEach(async () => {
       await page.keyboard.down('Space');
-    })
+    });
 
     it('碰到底部停止应该正确', async function() {
       await move.call(page.keyboard, 'ArrowDown', 18);
@@ -90,25 +90,25 @@ describe('单元测试', () => {
           }
         }
         return 'true';
-      })
+      });
       assert.equal(previous, 'true');
     });
 
     it('左移或右移应该正确', async function() {
       const oldPos = await page.evaluate(x => {
-      return [...document.querySelectorAll('.active')].map(x => /translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+        return [...document.querySelectorAll('.active')].map(x => +/translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
       });
       await page.keyboard.down('ArrowLeft');
       const newLeftPos = await page.evaluate(x => {
-        return [...document.querySelectorAll('.active')].map(x => /translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
-      })
+        return [...document.querySelectorAll('.active')].map(x => +/translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+      });
       await page.keyboard.down('ArrowRight');
       const newRightPos = await page.evaluate(x => {
-        return [...document.querySelectorAll('.active')].map(x => /translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
-      })
-      assert.deepEqual(oldPos, newLeftPos.map(x => +x + 20));
+        return [...document.querySelectorAll('.active')].map(x => +/translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+      });
+      assert.deepEqual(oldPos, newLeftPos.map(x => x + 20));
       assert.deepEqual(oldPos, newRightPos);
-    })
+    });
   });
 
   describe('消除测试', async () => {
@@ -174,6 +174,89 @@ describe('单元测试', () => {
        });
        assert.equal(newPosY, 'true');
     });
+  });
+
+  describe('游戏暂停测试', async () => {
+    beforeEach(async () => {
+      await page.keyboard.down('Space');
+    });
+
+    it('开始游戏按空格键应该暂停失败', async () => {
+      const startPos = await page.evaluate(x => {
+        const fixRects = Array.from(document.querySelectorAll('.active'));
+        return fixRects.map(rect => /translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+      });
+      await move.call(page.keyboard, 'ArrowDown', 5);
+      const nextPos = await page.evaluate(x => {
+        const fixRects = Array.from(document.querySelectorAll('.active'));
+        return fixRects.map(rect => /translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+      });
+      let startState;
+      if (startPos.toString() === nextPos.toString()) {
+        startState = 'false';
+      } else {
+        startState = 'true';
+      }
+      assert.equal(startState, 'true');
+    });
+
+    it('游戏中按空格键暂停应该成功', async () => {
+      await page.keyboard.down('Space');
+      const startPos = await page.evaluate(x => {
+        const fixRects = Array.from(document.querySelectorAll('.active'));
+        return fixRects.map(rect => +/translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+      });
+      await move.call(page.keyboard, 'ArrowDown', 5);
+      const nextPos = await page.evaluate(x => {
+        const fixRects = Array.from(document.querySelectorAll('.active'));
+        return fixRects.map(rect => +/translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+      });
+      let startState;
+      if (startPos.toString() === nextPos.toString()) {
+        startState = 'true';
+      } else {
+        startState = 'false';
+      }
+      assert.equal(startState, 'true');
+    });
+  })
+
+  describe('游戏重新开始测试', async () => {
+    beforeEach(async () => {
+      await page.evaluate(x => {
+        Math.random=function(){return 0.6};
+      });
+      await page.keyboard.down('Space');
+    });
+
+    it('游戏结束时应该出现重新开始提示', async () => {
+      await move.call(page.keyboard, 'ArrowDown', 50);
+      const reStartState = await page.evaluate(x => {
+        return document.querySelector('.start').textContent;
+      });
+      assert.equal(reStartState, '按Enter键重新开始');
+    });
+
+    it('游戏结束时按Enter应该重新开始', async () => {
+      await move.call(page.keyboard, 'ArrowDown', 50);
+      await page.keyboard.down('Enter');
+      await timeout(500);
+      const startState = await page.evaluate(x => {
+        return document.querySelector('.start').textContent;
+      });
+      assert.equal(startState, '按任意键开始游戏');
+    })
+
+    it('重新开始后任意键可以开始游戏', async () => {
+      await move.call(page.keyboard, 'ArrowDown', 50);
+      await page.keyboard.down('Enter');
+      await timeout(500);
+      await page.keyboard.down('Space');
+      const actives = await page.evaluate(x => {
+        return document.querySelectorAll('.active').length;
+      });
+      assert.equal(actives, 4);
+    })
   });
 
   afterEach(async () => {

@@ -81,6 +81,7 @@ class Teris {
       restartText.innerHTML = '按Enter键重新开始';
       document.getElementById('svg').appendChild(restartText);
       document.onkeydown = function restartGame(e) {
+        console.log(e)
         if (e.code === 'Enter') {
           location.reload();
         }
@@ -167,8 +168,7 @@ class Teris {
     }
     for (let i = line; i > 0; i--) {
       for (let j = 0; j < 10; j++) {
-        if (stopMark.has(j * 100 + (i - 1))) {
-          stopMark.delete(j * 100 + (i - 1));
+        if (stopMark.delete(j * 100 + (i - 1))) {
           stopMark.add(j * 100 + i);
         }
       }
