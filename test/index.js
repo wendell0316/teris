@@ -19,7 +19,7 @@ describe('单元测试', () => {
   const fileUrl = 'file://' + path.resolve(__dirname, '..', 'index.svg');
 
   before (async () => {
-    browser = await puppeteer.launch({headless: false});
+    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
   });
 
   beforeEach(async function() {
@@ -36,7 +36,6 @@ describe('单元测试', () => {
 
   describe('游戏开始测试', async () => {
     beforeEach(async () => {
-
       await page.keyboard.down('Space');
     });
 
@@ -53,7 +52,7 @@ describe('单元测试', () => {
       });
       assert.equal(nexts, 4);
     });
-  })
+  });
 
   describe('方块下落测试', async () => {
     beforeEach(async () => {
@@ -81,7 +80,6 @@ describe('单元测试', () => {
         await move.call(page.keyboard, direction[Math.trunc(Math.random()*3)], Math.trunc(Math.random()*5));
         await move.call(page.keyboard, 'ArrowDown', 18);
       }
-
       const previous = await page.evaluate(x => {
         const poss = [...document.querySelectorAll('.fix')].map(rect => rect.getAttribute('fix-field'));
         for (const [index, pos] of poss.sort().entries()) {
@@ -219,7 +217,7 @@ describe('单元测试', () => {
       }
       assert.equal(startState, 'true');
     });
-  })
+  });
 
   describe('游戏重新开始测试', async () => {
     beforeEach(async () => {
@@ -245,7 +243,7 @@ describe('单元测试', () => {
         return document.querySelector('.start').textContent;
       });
       assert.equal(startState, '按任意键开始游戏');
-    })
+    });
 
     it('重新开始后任意键可以开始游戏', async () => {
       await move.call(page.keyboard, 'ArrowDown', 50);
@@ -256,7 +254,7 @@ describe('单元测试', () => {
         return document.querySelectorAll('.active').length;
       });
       assert.equal(actives, 4);
-    })
+    });
   });
 
   afterEach(async () => {
