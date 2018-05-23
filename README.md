@@ -1,6 +1,9 @@
 # teris
+
 [![Build Status](https://travis-ci.org/wendell0316/teris.svg?branch=master)](https://travis-ci.org/wendell0316/teris)
+
 原生js和svg写的俄罗斯方块
+
 在类`Teris`中
 * `this.position`来记录运动中的方块的位置;
 * `this.shape`记录当前方块的形状；
