@@ -1,5 +1,5 @@
 <?xml-stylesheet type="text/css" href="./style.css"?>
-<svg class="teris" width="500" height="500" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="teris" width="480" height="410" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <svg x="250">
     <g class="title">
       <text text-anchor="middle" x="120" y="50" class="text text-1">
