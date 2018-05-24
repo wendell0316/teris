@@ -1,6 +1,6 @@
 const stopMark = new Set();
 let score = 0; // 计分
-let downTimer = 500;
+let downTimer = 800;
 const row = 10, col = 20;
 function deepClone(obj) {
   if (obj == null || typeof obj !== 'object') {
@@ -56,11 +56,12 @@ function deepClone(obj) {
 
 class Teris {
   constructor(shape) {
-    this.position = JSON.parse(JSON.stringify(shape));
+    this.position = deepClone(shape);
+    this.rotateCoodinate = this.position.pop();
     for (const pos of this.position) {
       pos.x += 4;
     }
-    this.shape = JSON.parse(JSON.stringify(shape));
+    this.rotateCoodinate.rX += 4;
     this.element = [];
     this.create();
   }
@@ -97,6 +98,10 @@ class Teris {
       pos.y += y;
     });
     if (Teris.isValidPos(newPos)) {
+      if (this.rotateCoodinate.rX !== null) {
+        this.rotateCoodinate.rX += x;
+        this.rotateCoodinate.rY += y;
+      }
       this.position = newPos;
       this.draw();
     }
@@ -104,17 +109,12 @@ class Teris {
 
   rotate() {
     const newPos = deepClone(this.position);
-    const difference = [];
-    for (const [index, pos] of this.position.entries()) {
-      difference.push({x: pos.x - this.shape[index].x, y: pos.y - this.shape[index].y});
-    }
-    for (let index = 0; index < this.position.length; index++) {
-      newPos[index].x = this.shape[index].y + difference[index].x;
-      newPos[index].y = 3 - this.shape[index].x + difference[index].y;
+    for (let index = 0; index < 4; index++) {
+      newPos[index].x = this.rotateCoodinate.rX + this.rotateCoodinate.rY - this.position[index].y;
+      newPos[index].y = this.rotateCoodinate.rY - this.rotateCoodinate.rX + this.position[index].x;
     }
     if (Teris.isValidPos(newPos)) {
       this.position = newPos;
-      this.shape = [{x: this.shape[0].y, y:3 - this.shape[0].x}, {x: this.shape[1].y, y: 3 - this.shape[1].x}, {x: this.shape[2].y, y: 3 - this.shape[2].x}, {x: this.shape[3].y, y: 3 - this.shape[3].x}];
       this.draw();
     }
   }
@@ -151,12 +151,12 @@ class Teris {
     }
     [...document.querySelector('.score').children].map(x => x.innerHTML = score);
     const fixRects = document.querySelectorAll('.fix');
-    for (let index = 0; index < 10; index++) {
+    for (let index = 0; index < row; index++) {
       document.querySelector(`.fix[fix-field="${index}_${line}"]`).remove();
       stopMark.delete(index * 100 + line);
     }
     for (let i = line; i > 0; i--) {
-      for (let j = 0; j < 10; j++) {
+      for (let j = 0; j < row; j++) {
         if (stopMark.delete(j * 100 + (i - 1))) {
           stopMark.add(j * 100 + i);
         }
@@ -164,20 +164,21 @@ class Teris {
     }
     for (const rect of Array.from(fixRects)) {
       let [, x, y] = /(.*)\_(.*)/.exec(rect.getAttribute('fix-field')).map(x => +x);
+      const fixField = document.querySelector(`.fix[fix-field="${x}_${y}"]`);
       if (y < line) {
-        document.querySelector(`.fix[fix-field="${x}_${y}"]`).setAttribute('transform', `translate(${x * 20}, ${(y + 1) * 20})`);
-        document.querySelector(`.fix[fix-field="${x}_${y}"]`).setAttribute('fix-field', `${x}_${y + 1}`);
+        fixField.setAttribute('transform', `translate(${x * 20}, ${(y + 1) * 20})`);
+        fixField.setAttribute('fix-field', `${x}_${y + 1}`);
       }
     }
   }
 }
-const shapes = [[{x: 2, y:0}, {x: 2, y: 1}, {x: 2, y: 2}, {x: 1, y: 2}],
-                [{x: 0, y:1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}],
-                [{x: 1, y:1}, {x: 2, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}],
-                [{x: 0, y:1}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}],
-                [{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 1, y: 3}],
-                [{x: 1, y:1}, {x: 2, y: 1}, {x: 0, y: 2}, {x: 1, y: 2}],
-                [{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}]];
+const shapes = [[{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 0, y: 2}, {rX: 1, rY: 1}],
+                [{x: 0, y:1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}, {rX: 1, rY: 1}],
+                [{x: 1, y:1}, {x: 2, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}, {rX: null, rY: null}],
+                [{x: 0, y:0}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}, {rX: 1, rY: 1}],
+                [{x: 2, y:0}, {x: 2, y: 1}, {x: 2, y: 2}, {x: 2, y: 3}, {rX: 2, rY: 2}],
+                [{x: 1, y:0}, {x: 2, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {rX: 1, rY: 1}],
+                [{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}, {rX: 1, rY: 1}]];
 let nextShape;
 let shape;
 let interval;
@@ -185,7 +186,9 @@ let interval;
 function keyDown(e) {
   switch (e.code) {
     case 'ArrowUp':
-      shape.rotate();
+      if (shape.shape[4].rX !== null) {
+        shape.rotate();
+      }
       break;
     case 'ArrowRight':
       shape.move(1, 0);
@@ -246,14 +249,14 @@ function moveDown() {
 }
 
 function drawNext(nextShape) {
-  for (const pos of nextShape) {
+  for (let index = 0; index < nextShape.length - 1; index++) {
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('width', 20);
     rect.setAttribute('height', 20);
     rect.setAttribute('x', 80);
     rect.setAttribute('y', 140);
     rect.classList.add('next-shape');
-    rect.setAttribute('transform', `translate(${pos.x * 20}, ${pos.y * 20})`);
+    rect.setAttribute('transform', `translate(${nextShape[index].x * 20}, ${nextShape[index].y * 20})`);
     document.querySelector('.next').appendChild(rect);
   }
 }
