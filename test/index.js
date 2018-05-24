@@ -278,7 +278,7 @@ describe('单元测试', () => {
       assert.equal(duration, '1s');
     });
 
-    it('游戏暂停计时器通知工作应该正确', async () => {
+    it('游戏暂停计时器工作应该正确', async () => {
       const duration = await page.evaluate(x => {
         return document.querySelector('.duration').children[1].textContent;
       });
@@ -288,6 +288,16 @@ describe('单元测试', () => {
         return document.querySelector('.duration').children[1].textContent;
       });
       assert.equal(duration, newDuration);
+    });
+
+    it('游戏恢复计时器工作应该正确', async () => {
+      await page.keyboard.down('Space');
+      await page.keyboard.down('Space');
+      await timeout(1000);
+      const duration = await page.evaluate(x => {
+        return document.querySelector('.duration').children[1].textContent;
+      });
+      assert.equal(duration, '1s');
     });
 
     it('游戏结束计数器应该停止工作', async () => {
@@ -313,4 +323,4 @@ describe('单元测试', () => {
   after(async () => {
     await browser.close();
   });
-})
+});

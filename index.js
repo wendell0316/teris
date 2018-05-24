@@ -270,13 +270,9 @@ function drawNext(nextShape) {
 
 function setDuration() {
   gameDuration = setInterval(() => {
+    duration += 1;
     document.querySelector('.duration').children[1].textContent = `${duration}s`;
-    clearInterval(gameDuration);
-    gameDuration = setInterval(() => {
-      duration += 1;
-      document.querySelector('.duration').children[1].textContent = `${duration}s`;
-    }, 1000)
-  }, 0);
+  }, 1000);
 }
 
 document.onkeydown = function startGame() {
