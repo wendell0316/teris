@@ -1,4 +1,4 @@
-const stopMark = new Set();
+'use strict';
 let score = 0; // 计分
 let downTimer = 800;
 const row = 10, col = 20;
@@ -90,7 +90,7 @@ class Tetris {
   }
 
   static isValidPos(pos) {
-    return pos.every(({x, y}) => x >= 0 && x < row && y < col && !stopMark.has(x * 100 + y));
+    return pos.every(({x, y}) => x >= 0 && x < row && y < col && !document.querySelector(`[fix-field="${x}_${y}"]`));
   }
 
   move(x, y) {
@@ -122,25 +122,17 @@ class Tetris {
   }
 
   fix() {
-    for (const pos of this.position) {
-      stopMark.add(pos.x * 100 + pos.y);
-    }
     for (const [index, rect] of Array.from(document.querySelectorAll('.active')).entries()) {
+      let pos = this.position[index];
       rect.classList.remove('active');
       rect.classList.add('fix');
-      rect.setAttribute('fix-field', `${this.position[index].x}_${this.position[index].y}`); // 标记每个固定方块的位置。
+      rect.setAttribute('fix-field', `${pos.x}_${pos.y}`); // 标记每个固定方块的位置。
     }
   }
 
   checkRemove() { // 检测是否有可以消除的行
     for (let y = 0; y < col; y++) {
-      let count = 0;
-      for (let x = 0; x < row; x++) {
-        if (stopMark.has(x * 100 + y)) {
-          count++;
-        }
-      }
-      if (count === row) {
+      if (document.querySelectorAll(`[fix-field$="_${y}"]`).length === row) {
         this.remove(y);
       }
     }
@@ -152,19 +144,10 @@ class Tetris {
       downTimer -= 50;
     }
     [...document.querySelector('.score').children].map(x => x.innerHTML = score);
-    const fixRects = document.querySelectorAll('.fix');
     for (let index = 0; index < row; index++) {
-      document.querySelector(`.fix[fix-field="${index}_${line}"]`).remove();
-      stopMark.delete(index * 100 + line);
+      document.querySelector(`[fix-field="${index}_${line}"]`).remove();
     }
-    for (let i = line; i > 0; i--) {
-      for (let j = 0; j < row; j++) {
-        if (stopMark.delete(j * 100 + (i - 1))) {
-          stopMark.add(j * 100 + i);
-        }
-      }
-    }
-    for (const rect of Array.from(fixRects)) {
+    for (const rect of document.querySelectorAll("[fix-field]")) {
       let [, x, y] = /(.*)\_(.*)/.exec(rect.getAttribute('fix-field')).map(x => +x);
       const fixField = document.querySelector(`.fix[fix-field="${x}_${y}"]`);
       if (y < line) {
