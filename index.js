@@ -54,20 +54,22 @@ function deepClone(obj) {
   }
 }
 
-class Teris {
+class Tetris {
   constructor(shape) {
     this.position = deepClone(shape);
     this.rotateCoodinate = this.position.pop();
     for (const pos of this.position) {
       pos.x += 4;
     }
-    this.rotateCoodinate.rX += 4;
+    if (this.rotateCoodinate !== null) {
+      this.rotateCoodinate.rX += 4;
+    }
     this.element = [];
     this.create();
   }
 
   create() { // 创建方块
-    if (Teris.isValidPos(this.position)) {
+    if (Tetris.isValidPos(this.position)) {
       for (let index = 0; index < this.position.length; index++) {
         let rectDom = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         rectDom.setAttribute('width', 20);
@@ -97,8 +99,8 @@ class Teris {
       pos.x += x;
       pos.y += y;
     });
-    if (Teris.isValidPos(newPos)) {
-      if (this.rotateCoodinate.rX !== null) {
+    if (Tetris.isValidPos(newPos)) {
+      if (this.rotateCoodinate !== null) {
         this.rotateCoodinate.rX += x;
         this.rotateCoodinate.rY += y;
       }
@@ -109,11 +111,11 @@ class Teris {
 
   rotate() {
     const newPos = deepClone(this.position);
-    for (let index = 0; index < 4; index++) {
+    for (let index = 0; index < this.position.length; index++) {
       newPos[index].x = this.rotateCoodinate.rX + this.rotateCoodinate.rY - this.position[index].y;
       newPos[index].y = this.rotateCoodinate.rY - this.rotateCoodinate.rX + this.position[index].x;
     }
-    if (Teris.isValidPos(newPos)) {
+    if (Tetris.isValidPos(newPos)) {
       this.position = newPos;
       this.draw();
     }
@@ -146,7 +148,7 @@ class Teris {
 
   remove(line) { // 消除行
     score++;
-    if ([10, 20, 30, 40, 50, 70, 100, 150, 200].includes(score)) {
+    if ([10, 20, 30, 40, 50, 70, 100, 150, 200, 250, 300, 400, 500].includes(score)) {
       downTimer -= 50;
     }
     [...document.querySelector('.score').children].map(x => x.innerHTML = score);
@@ -174,7 +176,7 @@ class Teris {
 }
 const shapes = [[{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 0, y: 2}, {rX: 1, rY: 1}],
                 [{x: 0, y:1}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}, {rX: 1, rY: 1}],
-                [{x: 1, y:1}, {x: 2, y: 1}, {x: 1, y: 2}, {x: 2, y: 2}, {rX: null, rY: null}],
+                [{x: 1, y:0}, {x: 2, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}, null],
                 [{x: 0, y:0}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}, {rX: 1, rY: 1}],
                 [{x: 2, y:0}, {x: 2, y: 1}, {x: 2, y: 2}, {x: 2, y: 3}, {rX: 2, rY: 2}],
                 [{x: 1, y:0}, {x: 2, y: 0}, {x: 1, y: 1}, {x: 0, y: 1}, {rX: 1, rY: 1}],
@@ -182,11 +184,13 @@ const shapes = [[{x: 1, y:0}, {x: 1, y: 1}, {x: 1, y: 2}, {x: 0, y: 2}, {rX: 1, 
 let nextShape;
 let shape;
 let interval;
+let duration = 0;
+let gameDuration;
 
 function keyDown(e) {
   switch (e.code) {
     case 'ArrowUp':
-      if (shape.shape[4].rX !== null) {
+      if (shape.rotateCoodinate !== null) {
         shape.rotate();
       }
       break;
@@ -202,11 +206,13 @@ function keyDown(e) {
     case 'Space':
       const titles = [...document.querySelector('.title').children];
       clearInterval(interval);
+      clearInterval(gameDuration);
       titles.map(x => x.innerHTML = 'PAUSE');
       document.onkeydown = function resume(e) {
         if (e.code !== 'Space') return;
         titles.map(x => x.innerHTML = 'SCORE');
         interval = setInterval(() => moveDown(), downTimer);
+        setDuration();
         document.onkeydown = keyDown;
       };
       break;
@@ -214,13 +220,14 @@ function keyDown(e) {
 }
 
 function createNextShape() {
-  shape = new Teris(nextShape);
-  if (Teris.isValidPos(shape.position)) {
+  shape = new Tetris(nextShape);
+  if (Tetris.isValidPos(shape.position)) {
     drawNext(nextShape = shapes[Math.trunc(Math.random() * 7)]);
     interval = setInterval(() => moveDown(), downTimer);
   } else {
     clearInterval(interval);
     [...document.querySelector('.title').children].map(x => x.innerHTML = 'GAME OVER');
+    clearInterval(gameDuration);
     const restartText = document.querySelector('.start');
     restartText.innerHTML = '按Enter键重新开始';
     document.getElementById('svg').appendChild(restartText);
@@ -237,7 +244,7 @@ function moveDown() {
   newPos.forEach(pos => {
     pos.y += 1;
   });
-  if (Teris.isValidPos(newPos)) {
+  if (Tetris.isValidPos(newPos)) {
     shape.move(0, 1);
   } else {
     shape.fix();
@@ -254,14 +261,26 @@ function drawNext(nextShape) {
     rect.setAttribute('width', 20);
     rect.setAttribute('height', 20);
     rect.setAttribute('x', 80);
-    rect.setAttribute('y', 140);
+    rect.setAttribute('y', 200);
     rect.classList.add('next-shape');
     rect.setAttribute('transform', `translate(${nextShape[index].x * 20}, ${nextShape[index].y * 20})`);
     document.querySelector('.next').appendChild(rect);
   }
 }
 
+function setDuration() {
+  gameDuration = setInterval(() => {
+    document.querySelector('.duration').children[1].textContent = `${duration}s`;
+    clearInterval(gameDuration);
+    gameDuration = setInterval(() => {
+      duration += 1;
+      document.querySelector('.duration').children[1].textContent = `${duration}s`;
+    }, 1000)
+  }, 0);
+}
+
 document.onkeydown = function startGame() {
+  setDuration();
   document.querySelector('.start').innerHTML = '';
   nextShape = shapes[Math.trunc(Math.random() * 7)];
   createNextShape();

@@ -19,7 +19,7 @@ describe('单元测试', () => {
   const fileUrl = 'file://' + path.resolve(__dirname, '..', 'index.svg');
 
   before (async () => {
-    browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
   });
 
   beforeEach(async function() {
@@ -118,19 +118,19 @@ describe('单元测试', () => {
     });
 
     it('底行消除分数增加及消除元素成功', async function() {
-      await move.call(page.keyboard, 'ArrowRight', 3);
+      await move.call(page.keyboard, 'ArrowRight', 4);
       await move.call(page.keyboard, 'ArrowDown', 18);
 
-      await move.call(page.keyboard, 'ArrowRight', 1);
+      await move.call(page.keyboard, 'ArrowRight', 2);
       await move.call(page.keyboard, 'ArrowDown', 18);
 
-      await move.call(page.keyboard, 'ArrowLeft', 1);
+      await move.call(page.keyboard, 'ArrowLeft', 0);
       await move.call(page.keyboard, 'ArrowDown', 18);
 
-      await move.call(page.keyboard, 'ArrowLeft', 3);
+      await move.call(page.keyboard, 'ArrowLeft', 2);
       await move.call(page.keyboard, 'ArrowDown', 18);
 
-      await move.call(page.keyboard, 'ArrowLeft', 5);
+      await move.call(page.keyboard, 'ArrowLeft', 4);
       await move.call(page.keyboard, 'ArrowDown', 18);
 
       const remove = await page.evaluate(x => {
@@ -265,6 +265,47 @@ describe('单元测试', () => {
     });
   });
 
+  describe('游戏计时测试', async () => {
+    beforeEach(async () => {
+      await page.keyboard.down('Space');
+    });
+
+    it('游戏开始计时器工作应该正确',async () => {
+      await timeout(1000);
+      const duration = await page.evaluate(x => {
+        return document.querySelector('.duration').children[1].textContent;
+      });
+      assert.equal(duration, '1s');
+    });
+
+    it('游戏暂停计时器通知工作应该正确', async () => {
+      const duration = await page.evaluate(x => {
+        return document.querySelector('.duration').children[1].textContent;
+      });
+      await page.keyboard.down('Space');
+      await timeout(1000);
+      const newDuration = await page.evaluate(x => {
+        return document.querySelector('.duration').children[1].textContent;
+      });
+      assert.equal(duration, newDuration);
+    });
+
+    it('游戏结束计数器应该停止工作', async () => {
+      await page.evaluate(x => {
+        Math.random=function(){return 0.6};
+      });
+      await move.call(page.keyboard, 'ArrowDown', 50);
+      const duration = await page.evaluate(x => {
+        return document.querySelector('.duration').children[1].textContent;
+      });
+      await page.keyboard.down('Space');
+      await timeout(1000);
+      const newDuration = await page.evaluate(x => {
+        return document.querySelector('.duration').children[1].textContent;
+      });
+      assert.equal(duration, newDuration);
+    });
+  });
   afterEach(async () => {
     await page.close();
   });

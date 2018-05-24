@@ -17,11 +17,14 @@
   stroke: rgb(190, 187, 187);
   stroke-width: 2px;
 }
-.teris {
+.tetris {
   margin: 0 auto;
 }
 #svg {
   padding: 0;
+}
+.duration text{
+  font-size: 20px;
 }
 .text{
   font-size: 35px;
