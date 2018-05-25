@@ -85,12 +85,14 @@ class Tetris {
   draw() {
     for (const [index, rect] of this.element.entries()) {
       const { x, y } = this.position[index];
-      rect.setAttribute('transform', `translate(${x * 20}, ${y * 20})`);
+      rect.setAttribute('x', `${x * 20}`);
+      rect.setAttribute('y', `${y * 20}`);
     }
   }
 
   static isValidPos(pos) {
-    return pos.every(({x, y}) => x >= 0 && x < row && y < col && !document.querySelector(`[fix-field="${x}_${y}"]`));
+    return pos.every(({x, y}) => x >= 0 && x < row && y < col &&
+      !document.querySelector(`[x-field="${x}"][y-field="${y}"]`));
   }
 
   move(x, y) {
@@ -110,11 +112,11 @@ class Tetris {
   }
 
   rotate() {
-    const newPos = deepClone(this.position);
-    for (let index = 0; index < this.position.length; index++) {
-      newPos[index].x = this.rotateCoodinate.rX + this.rotateCoodinate.rY - this.position[index].y;
-      newPos[index].y = this.rotateCoodinate.rY - this.rotateCoodinate.rX + this.position[index].x;
-    }
+    const {rX, rY} = this.rotateCoodinate;
+    const newPos = this.position.map(pos => ({
+      x: rX + rY - pos.y,
+      y: rY - rX + pos.x,
+    }));
     if (Tetris.isValidPos(newPos)) {
       this.position = newPos;
       this.draw();
@@ -126,13 +128,14 @@ class Tetris {
       let pos = this.position[index];
       rect.classList.remove('active');
       rect.classList.add('fix');
-      rect.setAttribute('fix-field', `${pos.x}_${pos.y}`); // 标记每个固定方块的位置。
+      rect.setAttribute('x-field', `${pos.x}`); // 标记每个固定方块的位置。
+      rect.setAttribute('y-field', `${pos.y}`)
     }
   }
 
   remove() { // 消除行
     for (let y = col - 1; y > 0; y--) {
-      let line = document.querySelectorAll(`[fix-field$="_${y}"]`);
+      let line = document.querySelectorAll(`[y-field="${y}"]`);
       if (line.length === row) {
         [...line].map(x => x.remove());
         score++;
@@ -141,11 +144,10 @@ class Tetris {
         }
         [...document.querySelector('.score').children].map(x => x.innerHTML = score);
         for (let index = y - 1; index > 0; index--) {
-          let downLine = document.querySelectorAll(`[fix-field$="_${index}"]`);
+          let downLine = document.querySelectorAll(`[y-field="${index}"]`);
           [...downLine].map(x => {
-            let [fixX, fixY] = x.getAttribute('fix-field').split('_').map(x => +x);
-            x.setAttribute('transform', `translate(${fixX * 20}, ${(fixY + 1) * 20})`);
-            x.setAttribute('fix-field', `${fixX}_${fixY + 1}`);
+            x.setAttribute('y', `${(index + 1) * 20}`);
+            x.setAttribute('y-field', `${index + 1}`);
           });
         }
         y++;

@@ -64,7 +64,7 @@ describe('单元测试', () => {
       const position = await page.evaluate(x => {
         const fixRects = Array.from(document.querySelectorAll('.fix'));
         for (const rect of fixRects) {
-          let [, x, y] = /(.*)\_(.*)/.exec(rect.getAttribute('fix-field')).map(x => +x);
+          let y = +rect.getAttribute('y-field');
           if (y >= 20) {
             return 'false';
           }
@@ -81,7 +81,10 @@ describe('单元测试', () => {
         await move.call(page.keyboard, 'ArrowDown', 18);
       }
       const previous = await page.evaluate(x => {
-        const poss = [...document.querySelectorAll('.fix')].map(rect => rect.getAttribute('fix-field'));
+        const fixs = [...document.querySelectorAll('.fix')];
+        const poss = fixs.map(rect => {
+          return rect.getAttribute('x-field') + rect.getAttribute('y-field');
+        });
         for (const [index, pos] of poss.sort().entries()) {
           if (pos === poss[index + 1]) {
             return 'false';
@@ -94,15 +97,15 @@ describe('单元测试', () => {
 
     it('左移或右移应该正确', async function() {
       const oldPos = await page.evaluate(x => {
-        return [...document.querySelectorAll('.active')].map(x => +/translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+        return [...document.querySelectorAll('.active')].map(x => +x.getAttribute('x'));
       });
       await page.keyboard.down('ArrowLeft');
       const newLeftPos = await page.evaluate(x => {
-        return [...document.querySelectorAll('.active')].map(x => +/translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+        return [...document.querySelectorAll('.active')].map(x => +x.getAttribute('x'));
       });
       await page.keyboard.down('ArrowRight');
       const newRightPos = await page.evaluate(x => {
-        return [...document.querySelectorAll('.active')].map(x => +/translate\((.*),(.*)\)/.exec(x.getAttribute('transform'))[1]);
+        return [...document.querySelectorAll('.active')].map(x => +x.getAttribute('x'));
       });
       assert.deepEqual(oldPos, newLeftPos.map(x => x + 20));
       assert.deepEqual(oldPos, newRightPos);
@@ -135,7 +138,7 @@ describe('单元测试', () => {
 
       const remove = await page.evaluate(x => {
         const score = +document.querySelector('.score text').textContent;
-        const posY = [...document.querySelectorAll('.fix')].map(x => /(.*)\_(.*)/.exec(x.getAttribute('fix-field'))[2]);
+        const posY = [...document.querySelectorAll('.fix')].map(x => x.getAttribute('y-field'));
         if (score === 1 && !posY.includes('17')) {
           return 'true';
         } else {
@@ -167,7 +170,7 @@ describe('单元测试', () => {
        await move.call(page.keyboard, 'ArrowDown', 18);
 
        const newPosY = await page.evaluate(x => {
-         const posY = [...document.querySelectorAll('.fix')].map(x => /(.*)\_(.*)/.exec(x.getAttribute('fix-field'))[2]);
+         const posY = [...document.querySelectorAll('.fix')].map(x => x.getAttribute('y-field'));
          return JSON.stringify(!posY.includes('17'));
        });
        assert.equal(newPosY, 'true');
@@ -182,12 +185,12 @@ describe('单元测试', () => {
     it('开始游戏按空格键应该暂停失败', async () => {
       const startPos = await page.evaluate(x => {
         const fixRects = Array.from(document.querySelectorAll('.active'));
-        return fixRects.map(rect => /translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+        return fixRects.map(rect => +rect.getAttribute('y'));
       });
       await move.call(page.keyboard, 'ArrowDown', 5);
       const nextPos = await page.evaluate(x => {
         const fixRects = Array.from(document.querySelectorAll('.active'));
-        return fixRects.map(rect => /translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+        return fixRects.map(rect => +rect.getAttribute('y'));
       });
       let startState;
       if (startPos.toString() === nextPos.toString()) {
@@ -202,12 +205,12 @@ describe('单元测试', () => {
       await page.keyboard.down('Space');
       const startPos = await page.evaluate(x => {
         const fixRects = Array.from(document.querySelectorAll('.active'));
-        return fixRects.map(rect => +/translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+        return fixRects.map(rect => +rect.getAttribute('y'));
       });
       await move.call(page.keyboard, 'ArrowDown', 5);
       const nextPos = await page.evaluate(x => {
         const fixRects = Array.from(document.querySelectorAll('.active'));
-        return fixRects.map(rect => +/translate\((.*),(.*)\)/.exec(rect.getAttribute('transform'))[2]).map(x => +x);
+        return fixRects.map(rect => +rect.getAttribute('y'));
       });
       let startState;
       if (startPos.toString() === nextPos.toString()) {
