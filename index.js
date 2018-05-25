@@ -130,29 +130,27 @@ class Tetris {
     }
   }
 
-  checkRemove() { // 检测是否有可以消除的行
-    for (let y = 0; y < col; y++) {
-      if (document.querySelectorAll(`[fix-field$="_${y}"]`).length === row) {
-        this.remove(y);
-      }
-    }
-  }
-
-  remove(line) { // 消除行
-    score++;
-    if ([10, 20, 30, 40, 50, 70, 100, 150, 200, 250, 300, 400, 500].includes(score)) {
-      downTimer -= 50;
-    }
-    [...document.querySelector('.score').children].map(x => x.innerHTML = score);
-    for (let index = 0; index < row; index++) {
-      document.querySelector(`[fix-field="${index}_${line}"]`).remove();
-    }
-    for (const rect of document.querySelectorAll("[fix-field]")) {
-      let [, x, y] = /(.*)\_(.*)/.exec(rect.getAttribute('fix-field')).map(x => +x);
-      const fixField = document.querySelector(`.fix[fix-field="${x}_${y}"]`);
-      if (y < line) {
-        fixField.setAttribute('transform', `translate(${x * 20}, ${(y + 1) * 20})`);
-        fixField.setAttribute('fix-field', `${x}_${y + 1}`);
+  remove() { // 消除行
+    for (let y = col - 1; y > 0; y--) {
+      let line = document.querySelectorAll(`[fix-field$="_${y}"]`);
+      if (line.length === row) {
+        [...line].map(x => x.remove());
+        score++;
+        if ([10, 20, 30, 40, 50, 70, 100, 150, 200, 250, 300, 400, 500].includes(score)) {
+          downTimer -= 50;
+        }
+        [...document.querySelector('.score').children].map(x => x.innerHTML = score);
+        for (let index = y - 1; index > 0; index--) {
+          let downLine = document.querySelectorAll(`[fix-field$="_${index}"]`);
+          [...downLine].map(x => {
+            let [fixX, fixY] = x.getAttribute('fix-field').split('_').map(x => +x);
+            x.setAttribute('transform', `translate(${fixX * 20}, ${(fixY + 1) * 20})`);
+            x.setAttribute('fix-field', `${fixX}_${fixY + 1}`);
+          });
+        }
+        y++;
+      } else if (line.length === 0) {
+        return;
       }
     }
   }
@@ -231,7 +229,7 @@ function moveDown() {
     shape.move(0, 1);
   } else {
     shape.fix();
-    shape.checkRemove();
+    shape.remove();
     [...document.querySelector('.next').children].map(x => x.remove());
     clearInterval(interval);
     createNextShape();
