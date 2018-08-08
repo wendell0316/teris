@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/wendell0316/teris.svg?branch=master)](https://travis-ci.org/wendell0316/teris)
 
+[试玩地址](https://wendell0316.github.io/teris/index.svg "Title").
+
 原生js和svg写的俄罗斯方块
 
 在类`Tetris`中
